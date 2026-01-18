@@ -1,0 +1,112 @@
+import { Button, LineEdit, ComboBox, ScrollView } from "std-widgets.slint";
+
+export component AppWindow inherits Window {
+    in-out property <string> content: "";
+    in-out property <color> logo_color: #ffffff;
+    in-out property <float> font_size: 16.0;
+    
+    // Статус курсора (синий неон)
+    in-out property <int> cur_line: 1;
+    in-out property <int> cur_col: 1;
+
+    callback save_to_file(string);
+    callback open_file();
+    // Изменили логику: Rust будет считать позицию по изменению текста
+    callback update_cursor_info(string, int);
+
+    title: "Nevercore";
+    min-width: 900px;
+    min-height: 700px;
+    background: #000000e6; 
+
+    VerticalLayout {
+        padding: 20px;
+        spacing: 12px;
+
+        // --- ВЕРХНЯЯ ПАНЕЛЬ ---
+        HorizontalLayout {
+            vertical-stretch: 0;
+            alignment: space-between;
+            
+            VerticalLayout {
+                spacing: -5px;
+                Text {
+                    text: "  ____  _        _   _                                 _   \n / ___|| |_ __ _| |_(_) ___  _ __  _____      _____  ___| |_ \n \\___ \\| __/ _` | __| |/ _ \\| '_ \\/ __\\ \\ /\\ / / _ \\/ _ \\ __|\n  ___) | || (_| | |_| | (_) | | | \\__ \\\\ V  V /  __/  __/ |_ \n |____/ \\__\\__,_|\\__|_|\\___/|_| |_|___/ \\_/\\_/ \\___|\\___|\\__|";
+                    font-family: "Courier New";
+                    font-size: 8px;
+                    font-weight: 900;
+                    color: root.logo_color;
+                }
+                HorizontalLayout {
+                    padding-left: 2px;
+                    Text { text: "by seed tech"; color: #ffffff; font-size: 10px; }
+                }
+            }
+
+            HorizontalLayout {
+                spacing: 10px;
+                alignment: center;
+                
+                ComboBox {
+                    width: 80px;
+                    model: ["12", "14", "16", "20", "24", "32"];
+                    current-value: "16";
+                    selected(val) => { root.font_size = val.to-float(); }
+                }
+
+                Button { text: "📂 Open"; clicked => { root.open_file(); } }
+                
+                Rectangle {
+                    width: 100px; height: 32px;
+                    background: s_touch.pressed ? #660000 : (s_touch.has-hover ? #cc0000 : #990000);
+                    border-radius: 4px;
+                    animate background { duration: 150ms; }
+                    Text { text: "💾 Save"; color: white; font-weight: 700; }
+                    s_touch := TouchArea { clicked => { root.save_to_file(root.content); } }
+                }
+            }
+        }
+
+        // --- РЕДАКТОР ---
+        Rectangle {
+            background: #050505b3;
+            border-color: #ff00004d;
+            border-width: 1px;
+            border-radius: 4px;
+            clip: true;
+            
+            ScrollView {
+                VerticalLayout {
+                    padding: 15px; 
+                    text_input := TextInput {
+                        text <=> root.content;
+                        font-family: "Courier New";
+                        font-size: root.font_size * 1px;
+                        color: #ffffff;
+                        single-line: false;
+                        wrap: word-wrap;
+                        
+                        // При изменении текста или фокуса обновляем инфу
+                        edited => {
+                            root.update_cursor_info(self.text, 0); // Упрощенный триггер
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- НЕОНОВЫЙ СТАТУС-БАР ---
+        HorizontalLayout {
+            vertical-stretch: 0;
+            Text {
+                text: "LN: " + root.cur_line + " | COL: " + root.cur_col;
+                color: #00f2ff;
+                font-family: "Courier New";
+                font-size: 11px;
+                font-weight: 700;
+            }
+            Rectangle { horizontal-stretch: 1; }
+            Text { text: "NEVERCORE ENGINE | .seed"; color: #ff0000; font-size: 10px; }
+        }
+    }
+}
